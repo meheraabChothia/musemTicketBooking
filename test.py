@@ -5,8 +5,8 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 # Email Credentials
-EMAIL_ADDRESS = "meheraablook@gmail.com"
-EMAIL_PASSWORD = "ouyd wxxu rmhw ygua"  # Use an App Password
+EMAIL_ADDRESS = ""
+EMAIL_PASSWORD = ""  # Use an App Password
 
 # Recipient
 TO_EMAIL = "iqbalarshaan1a1@gmail.com"
