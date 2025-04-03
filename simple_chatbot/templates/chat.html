@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Museum</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background: url('/static/matteo-maretto-9KkPloRgOUY-unsplash.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s;
+            display: flex;
+            height: 90vh;
+            margin: 20px auto;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .left-panel {
+            width: 25%;
+            padding: 20px;
+            border-right: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            background-color: rgba(255, 255, 255, 0.75);
+            border-radius: 10px 0 0 10px;
+        }
+
+        .right-panel {
+            width: 75%;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 0 10px 10px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h4 {
+            color: #8f086f;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #chat-display {
+            flex-grow: 1;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #past-chats {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding-right: 5px;
+        }
+
+        .conversation-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 12px 10px;
+            background-color: rgba(143, 8, 111, 0.05);
+            margin-bottom: 5px;
+            border-radius: 25px;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(143, 8, 111, 0.2);
+        }
+
+        .conversation-btn:hover {
+            background-color: rgba(143, 8, 111, 0.2);
+            transform: translateX(5px);
+        }
+
+        .title-text {
+            font-size: 12px;
+            margin-bottom: 2px;
+            color: #000000;
+            font-weight: 500;
+        }
+
+        .date-text {
+            font-size: 10px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .user-message {
+            background-color: rgba(143, 8, 111, 0.1);
+            border-radius: 20px;
+            padding: 10px 15px;
+            margin: 5px 0;
+            align-self: flex-end;
+            width: fit-content;
+            max-width: 80%;
+            text-align: right;
+            word-wrap: break-word;
+        }
+
+        .bot-message {
+            background-color: rgba(0, 194, 255, 0.1);
+            border-radius: 20px;
+            padding: 10px 15px;
+            margin: 5px 0;
+            align-self: flex-start;
+            width: fit-content;
+            max-width: 80%;
+            text-align: left;
+            word-wrap: break-word;
+        }
+
+        .typing-indicator {
+            background-color: rgba(0, 194, 255, 0.1);
+            border-radius: 20px;
+            padding: 15px;
+            margin: 5px 0;
+            align-self: flex-start;
+            width: fit-content;
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #8f086f;
+            border-radius: 50%;
+            animation: typing-bounce 1.4s infinite;
+            opacity: 0.7;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing-bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+
+        #user-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        #user-input-field {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #8f086f;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+        
+        .confirmation-box {
+            background-color: rgba(143, 8, 111, 0.05);
+            border: 1px solid rgba(143, 8, 111, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            align-self: center;
+            width: 90%;
+        }
+
+        .confirmation-text {
+            white-space: pre-line;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .confirmation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .confirmation-buttons button {
+            min-width: 120px;
+        }
+
+        .booking-status {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 4px;
+        }
+
+        .status-completed {
+            background-color: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+        }
+
+        .status-pending {
+            background-color: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .booking-option {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: rgba(143, 8, 111, 0.1);
+            border: 1px solid rgba(143, 8, 111, 0.2);
+            border-radius: 5px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .booking-option:hover {
+            background-color: rgba(143, 8, 111, 0.2);
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h4>Your Bookings</h4>
+            <div id="past-chats"></div>
+            <button onclick="startNewBooking()">New Booking</button>
+        </div>
+        <div class="right-panel">
+            <div class="header">
+                <h4>Smart Museum Assistant</h4>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+            <div id="chat-display">
+                <div class="bot-message">{{ initial_message }}</div>
+            </div>
+            <div id="user-input">
+                <input type="text" id="user-input-field" placeholder="Type your message here...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Typing speed in milliseconds per character
+        const TYPING_SPEED = 10;  // Adjust this value to change typing speed
+
+        async function typeMessage(element, text) {
+            let currentText = '';
+            let boldText = false;
+            
+            for (let i = 0; i < text.length; i++) {
+                if (text[i] === '*' && text[i + 1] === '*') {
+                    // Toggle bold
+                    boldText = !boldText;
+                    if (boldText) {
+                        currentText += '<strong>';
+                    } else {
+                        currentText += '</strong>';
+                    }
+                    i++; // Skip second asterisk
+                } else if ((text[i] === '\\' && text[i + 1] === 'n') || 
+                          (text[i] === '\n')) {
+                    // Handle newline
+                    currentText += '<br>';
+                    if (text[i] === '\\') i++; // Skip 'n' only for \n
+                } else {
+                    currentText += text[i];
+                }
+                
+                element.innerHTML = currentText;
+                await new Promise(resolve => setTimeout(resolve, TYPING_SPEED));
+                element.parentElement.scrollTop = element.parentElement.scrollHeight;
+            }
+        }
+
+        // Load conversations when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBookings();
+            
+            // Add enter key handler
+            document.getElementById('user-input-field').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input-field');
+            const chatDisplay = document.getElementById('chat-display');
+            
+            if (userInput.value.trim() === "") return;
+            
+            // Display user message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'user-message';
+            userMessage.textContent = userInput.value;
+            chatDisplay.appendChild(userMessage);
+            
+            const message = userInput.value;
+            userInput.value = '';
+            
+            // Add typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'typing-indicator';
+            typingIndicator.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            chatDisplay.appendChild(typingIndicator);
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+            
+            try {
+                const response = await fetch('/send_message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                typingIndicator.remove();
+                
+                // Display bot response with typing animation
+                const botMessage = document.createElement('div');
+                botMessage.className = 'bot-message';
+                chatDisplay.appendChild(botMessage);
+                await typeMessage(botMessage, data.response);
+                
+                // Handle booking options if needed
+                if (data.show_bookings && data.bookings && data.bookings.length > 0) {
+                    showBookingOptions(data.bookings, data.action, data.new_date, data.new_time);
+                }
+                // Handle update confirmation for selected booking
+                else if (data.show_update_confirmation && data.booking) {
+                    showUpdateConfirmation(data.booking, data.new_date, data.new_time);
+                }
+                // Handle confirmation if needed
+                else if (data.show_confirmation && !data.payment_completed) {
+                    const confirmationDiv = document.createElement('div');
+                    confirmationDiv.className = 'confirmation-box';
+                    confirmationDiv.innerHTML = `
+                        <div class="confirmation-text">${data.confirmation_text}</div>
+                        <div class="confirmation-buttons">
+                            <button onclick='confirmBooking(${JSON.stringify(data.booking_details).replace(/'/g, "&#39;")})'>Confirm Booking</button>
+                            <button onclick="cancelBooking()">Cancel</button>
+                        </div>
+                    `;
+                    chatDisplay.appendChild(confirmationDiv);
+                } else if (data.show_confirmation && data.payment_completed) {
+                    const botMessage = document.createElement('div');
+                    botMessage.className = 'bot-message';
+                    botMessage.textContent = "I see you've already completed a booking. Would you like to make another booking or can I help you with something else?";
+                    chatDisplay.appendChild(botMessage);
+                }
+                
+                // Update sidebar if needed
+                if (data.update_sidebar) {
+                    loadBookings();
+                }
+                
+                chatDisplay.scrollTop = chatDisplay.scrollHeight;
+            } catch (error) {
+                typingIndicator.remove();
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadBookings() {
+            try {
+                const response = await fetch('/get_bookings');
+                const bookings = await response.json();
+                console.log('Received bookings:', bookings);  // Debug log
+                
+                const pastChats = document.getElementById('past-chats');
+                pastChats.innerHTML = '';
+                
+                bookings.forEach(booking => {
+                    // Add null check for visited field
+                    const visitedStatus = booking.visited || 'FALSE';
+                    const button = document.createElement('button');
+                    button.className = 'conversation-btn';
+                    
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'title-text';
+                    titleDiv.textContent = `Booking for ${booking.date}`;
+                    
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'date-text';
+                    dateDiv.textContent = `Time: ${booking.time}`;
+                    
+                    const statusDiv = document.createElement('div');
+                    const isVisited = visitedStatus.toUpperCase() === 'TRUE';
+                    statusDiv.className = `booking-status ${isVisited ? 'status-completed' : 'status-pending'}`;
+                    statusDiv.textContent = isVisited ? 'Visited' : 'Not Visited';
+                    
+                    button.appendChild(titleDiv);
+                    button.appendChild(dateDiv);
+                    button.appendChild(statusDiv);
+                    button.onclick = () => {
+                        try {
+                            showBookingDetails(booking);
+                        } catch (error) {
+                            console.error('Error showing booking details:', error);
+                        }
+                    };
+                    
+                    pastChats.appendChild(button);
+                });
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                console.error('Full error:', error.stack);  // More detailed error logging
+            }
+        }
+
+        function showBookingDetails(booking) {
+            const visitedStatus = booking.visited || 'FALSE';
+            const chatDisplay = document.getElementById('chat-display');
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = 'bot-message';
+            const isVisited = visitedStatus.toUpperCase() === 'TRUE';
+            detailsDiv.innerHTML = `
+                <strong>Booking Details:</strong><br>
+                Booking ID: ${booking.booking_id}<br>
+                Name: ${booking.name}<br>
+                Phone: ${booking.phone_number}<br>
+                Email: ${booking.email}<br>
+                Children Tickets: ${booking.children_tickets}<br>
+                Adult Tickets: ${booking.adult_tickets}<br>
+                Date: ${booking.date}<br>
+                Time: ${booking.time}<br>
+                Status: ${isVisited ? 'Visited' : 'Not Visited'}<br>
+                Booked on: ${booking.booking_time}
+            `;
+            chatDisplay.appendChild(detailsDiv);
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+        }
+
+        function logout() {
+            window.location.href = '/logout';
+        }
+
+        async function confirmBooking(bookingDetails) {
+            try {
+                const response = await fetch('/confirm_booking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ booking_details: bookingDetails })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Initialize Razorpay payment
+                    const options = {
+                        key: data.key,
+                        amount: data.amount,
+                        currency: data.currency,
+                        order_id: data.order_id,
+                        name: 'Museum Tickets',
+                        description: 'Museum Entry Tickets',
+                        onload: function() {
+                            fetch('/log_payment_status', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ status: "Payment portal loaded and ready" })
+                            });
+                        },
+                        handler: async function(response) {
+                            const chatDisplay = document.getElementById('chat-display');
+                            if (!chatDisplay) {
+                                console.error('Chat display element not found');
+                                return;
+                            }
+                            fetch('/log_payment_status', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ status: "User exited payment portal - Payment successful" })
+                            });
+                            // Handle payment success
+                            try {
+                                const paymentResponse = await fetch('/payment_success', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(response)
+                                });
+                                
+                                console.log('Payment response received:', paymentResponse.status);
+                                const paymentData = await paymentResponse.json();
+                                console.log('Payment data:', paymentData);
+                                
+                                // Display success message
+                                const botMessage = document.createElement('div');
+                                botMessage.className = 'bot-message';
+                                if (paymentData.status === 'success') {
+                                    botMessage.innerHTML = `✅ ${paymentData.message}<br><br>` +
+                                        `Your payment ID: ${response.razorpay_payment_id}`;
+                                } else {
+                                    botMessage.innerHTML = `❌ ${paymentData.message}`;
+                                }
+                                chatDisplay.appendChild(botMessage);
+                            } catch (error) {
+                                console.error('Payment processing error:', error);
+                                const botMessage = document.createElement('div');
+                                botMessage.className = 'bot-message';
+                                botMessage.innerHTML = `❌ Error processing payment.<br><br>` +
+                                    `Your payment might have been processed but couldn't be recorded.<br>` +
+                                    `Please save your payment ID: ${response.razorpay_payment_id}<br>` +
+                                    `and contact support for assistance.`;
+                                chatDisplay.appendChild(botMessage);
+                            }
+                        },
+                        modal: {
+                            ondismiss: function() {
+                                const chatDisplay = document.getElementById('chat-display');
+                                if (!chatDisplay) {
+                                    console.error('Chat display element not found');
+                                    return;
+                                }
+                                fetch('/log_payment_status', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ status: "User exited payment portal - Portal closed without payment" })
+                                });
+                                setTimeout(() => {
+                                    const botMessage = document.createElement('div');
+                                    botMessage.className = 'bot-message';
+                                    botMessage.innerHTML = "❌ Payment window closed. Please try again if you'd like to complete your booking.";
+                                    chatDisplay.appendChild(botMessage);
+                                    chatDisplay.scrollTop = chatDisplay.scrollHeight;
+                                }, 1000);  // Small delay to ensure message appears after modal closes
+                            }
+                        },
+                        notes: bookingDetails,
+                        retry: {
+                            enabled: true,
+                            max_count: 3
+                        },
+                        prefill: {
+                            name: bookingDetails.name,
+                            email: bookingDetails.email,
+                            contact: bookingDetails.phone_number
+                        },
+                        theme: {
+                            color: '#8f086f'
+                        }
+                    };
+                    
+                    const rzp = new Razorpay(options);
+                    
+                    // Handle payment failures
+                    rzp.on('payment.failed', function(response) {
+                        fetch('/log_payment_status', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ status: `User exited payment portal - Payment failed\nError: ${response.error.description}\nCode: ${response.error.code}` })
+                        });
+                        const botMessage = document.createElement('div');
+                        botMessage.className = 'bot-message';
+                        botMessage.innerHTML = `❌ Payment Failed<br><br>` +
+                            `Error: ${response.error.description}<br>` +
+                            `Code: ${response.error.code}<br>` +
+                            `Please try again or contact support if the issue persists.`;
+                        chatDisplay.appendChild(botMessage);
+                    });
+                    
+                    fetch('/log_payment_status', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: "Opening payment portal" })
+                    });
+                    rzp.open();
+                    
+                    // Remove confirmation box
+                    document.querySelector('.confirmation-box').remove();
+                } else {
+                    throw new Error(data.message);
+                }
+                
+            } catch (error) {
+                console.error('Error confirming booking:', error);
+                const botMessage = document.createElement('div');
+                botMessage.className = 'bot-message';
+                botMessage.textContent = 'Sorry, there was an error processing your booking. Please try again.';
+                chatDisplay.appendChild(botMessage);
+            }
+        }
+
+        function cancelBooking() {
+            // Remove confirmation box
+            document.querySelector('.confirmation-box').remove();
+            
+            // Display cancellation message
+            const botMessage = document.createElement('div');
+            botMessage.className = 'bot-message';
+            botMessage.textContent = "Booking cancelled. Is there anything else I can help you with?";
+            chatDisplay.appendChild(botMessage);
+        }
+
+        async function startNewBooking() {
+            const chatDisplay = document.getElementById('chat-display');
+            try {
+                const response = await fetch('/new_chat', { method: 'POST' });
+                const data = await response.json();
+                
+                chatDisplay.innerHTML = `<div class="bot-message">${data.message}</div>`;
+                
+                loadBookings();
+            } catch (error) {
+                console.error('Error starting new chat:', error);
+            }
+        }
+
+        function showBookingOptions(bookings, action, newDate = null, newTime = null) {
+            const chatDisplay = document.getElementById('chat-display');
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'confirmation-box';
+            
+            let headerText = '';
+            if (action === 'update' && newDate && newTime) {
+                headerText = `Would you like to update one of these bookings to ${newDate} at ${newTime}?`;
+            } else if (action === 'delete') {
+                headerText = 'Which booking would you like to delete?';
+            } else {
+                headerText = 'Here are your upcoming bookings:';
+            }
+            
+            let optionsHTML = `<div class="confirmation-text">${headerText}</div>`;
+            
+            bookings.forEach(booking => {
+                const buttonAction = action === 'update' ? 
+                    `updateBooking('${booking.booking_id}', '${newDate}', '${newTime}')` : 
+                    (action === 'delete' ? 
+                        `deleteBooking('${booking.booking_id}')` : 
+                        `selectBooking('${booking.booking_id}')`);
+                
+                optionsHTML += `
+                    <button class="booking-option" onclick="${buttonAction}">
+                        ${booking.date} at ${booking.time} - ${booking.children_tickets} child, ${booking.adult_tickets} adult tickets
+                    </button>
+                `;
+            });
+            
+            if (action !== 'select') {
+                optionsHTML += `
+                    <div class="confirmation-buttons">
+                        <button onclick="cancelBookingAction()">Cancel</button>
+                    </div>
+                `;
+            }
+            
+            optionsDiv.innerHTML = optionsHTML;
+            chatDisplay.appendChild(optionsDiv);
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+        }
+        
+        async function updateBooking(bookingId, newDate, newTime) {
+            try {
+                const response = await fetch('/update_booking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        booking_id: bookingId,
+                        date: newDate,
+                        time: newTime
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove booking options
+                document.querySelector('.confirmation-box').remove();
+                
+                // Show result message
+                const botMessage = document.createElement('div');
+                botMessage.className = 'bot-message';
+                
+                if (data.status === 'success') {
+                    botMessage.innerHTML = `✅ ${data.message}`;
+                    // Refresh bookings list
+                    loadBookings();
+                } else {
+                    botMessage.innerHTML = `❌ Error: ${data.error || 'Failed to update booking'}`;
+                }
+                
+                const chatDisplay = document.getElementById('chat-display');
+                chatDisplay.appendChild(botMessage);
+                chatDisplay.scrollTop = chatDisplay.scrollHeight;
+                
+            } catch (error) {
+                console.error('Error updating booking:', error);
+                const botMessage = document.createElement('div');
+                botMessage.className = 'bot-message';
+                botMessage.textContent = 'Sorry, there was an error updating your booking. Please try again.';
+                chatDisplay.appendChild(botMessage);
+            }
+        }
+        
+        async function deleteBooking(bookingId) {
+            try {
+                const response = await fetch('/delete_booking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ booking_id: bookingId })
+                });
+                
+                const data = await response.json();
+                
+                // Remove booking options
+                document.querySelector('.confirmation-box').remove();
+                
+                // Show result message
+                const botMessage = document.createElement('div');
+                botMessage.className = 'bot-message';
+                
+                if (data.status === 'success') {
+                    botMessage.innerHTML = `✅ ${data.message}`;
+                    // Refresh bookings list
+                    loadBookings();
+                } else {
+                    botMessage.innerHTML = `❌ Error: ${data.error || 'Failed to delete booking'}`;
+                }
+                
+                const chatDisplay = document.getElementById('chat-display');
+                chatDisplay.appendChild(botMessage);
+                chatDisplay.scrollTop = chatDisplay.scrollHeight;
+                
+            } catch (error) {
+                console.error('Error deleting booking:', error);
+                const botMessage = document.createElement('div');
+                botMessage.className = 'bot-message';
+                botMessage.textContent = 'Sorry, there was an error deleting your booking. Please try again.';
+                chatDisplay.appendChild(botMessage);
+            }
+        }
+        
+        function selectBooking(bookingId) {
+            // Send selected booking ID to server
+            fetch('/select_booking', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ booking_id: bookingId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Show the selected booking details
+                const chatDisplay = document.getElementById('chat-display');
+                const botMessage = document.createElement('div');
+                botMessage.className = 'bot-message';
+                botMessage.textContent = `You've selected this booking. What would you like to do with it? You can update the date and time or delete it.`;
+                chatDisplay.appendChild(botMessage);
+                
+                // Remove booking options
+                document.querySelector('.confirmation-box').remove();
+            })
+            .catch(error => {
+                console.error('Error selecting booking:', error);
+            });
+        }
+        
+        function cancelBookingAction() {
+            // Remove booking options
+            document.querySelector('.confirmation-box').remove();
+            
+            // Show cancellation message
+            const botMessage = document.createElement('div');
+            botMessage.className = 'bot-message';
+            botMessage.textContent = "Action cancelled. Is there anything else I can help you with?";
+            chatDisplay.appendChild(botMessage);
+        }
+
+        function showUpdateConfirmation(booking, newDate, newTime) {
+            const chatDisplay = document.getElementById('chat-display');
+            const confirmDiv = document.createElement('div');
+            confirmDiv.className = 'confirmation-box';
+            
+            confirmDiv.innerHTML = `
+                <div class="confirmation-text">
+                    Would you like to update your booking from ${booking.date} at ${booking.time} to ${newDate} at ${newTime}?
+                </div>
+                <div class="confirmation-buttons">
+                    <button onclick="updateBooking('${booking.booking_id}', '${newDate}', '${newTime}')">Confirm Update</button>
+                    <button onclick="cancelBookingAction()">Cancel</button>
+                </div>
+            `;
+            
+            chatDisplay.appendChild(confirmDiv);
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+        }
+    </script>
+</body>
+</html> 
