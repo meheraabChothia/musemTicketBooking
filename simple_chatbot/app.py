@@ -34,8 +34,8 @@ CHILD_TICKET_PRICE = 25
 ADULT_TICKET_PRICE = 50
 
 # Email Configuration
-EMAIL_ADDRESS = "meheraablook@gmail.com"
-EMAIL_PASSWORD = "ouyd wxxu rmhw ygua"  # App Password
+EMAIL_ADDRESS = ""
+EMAIL_PASSWORD = ""  # App Password
 
 # Add new system prompt for unavailable slots
 UNAVAILABLE_SLOT_PROMPT = {
