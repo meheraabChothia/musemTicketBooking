@@ -3,7 +3,7 @@ import os
 import openai
 
 client = openai.OpenAI(
-    api_key="100cfa62-287e-4983-8986-010da6320a53",
+    api_key="",
     base_url="https://api.sambanova.ai/v1",
 )
 
